@@ -59,7 +59,9 @@ async function loadRegisteredStudents(){
   listEl.innerHTML = '<span class="vf-hint" style="text-transform:none;letter-spacing:0">Loading…</span>';
 
   try{
-    const res = await fetch(BASE_URL + '/attendance/students');
+    const res = await fetch(BASE_URL + '/attendance/students', {
+      headers: { 'ngrok-skip-browser-warning': 'true' }
+    });
     const data = await res.json();
 
     if(!data.success){
@@ -91,7 +93,10 @@ async function loadRegisteredStudents(){
 
 async function removeStudent(userId){
   try{
-    const res = await fetch(BASE_URL + '/attendance/students/' + userId, { method: 'DELETE' });
+    const res = await fetch(BASE_URL + '/attendance/students/' + userId, {
+      method: 'DELETE',
+      headers: { 'ngrok-skip-browser-warning': 'true' }
+    });
     const data = await res.json();
     if(data.success){
       loadRegisteredStudents();
@@ -250,7 +255,11 @@ async function processImage(file, kind){
 
   setLoading(kind);
   try{
-    const res = await fetch(url, { method: 'POST', body: formData });
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'ngrok-skip-browser-warning': 'true' },
+      body: formData
+    });
     const data = await res.json();
     renderResult(kind, data, res.ok && data.success !== false);
   }catch(err){
