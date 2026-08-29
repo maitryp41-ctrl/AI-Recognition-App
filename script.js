@@ -1,5 +1,5 @@
 // Change this if your backend runs somewhere other than localhost:5000
-const BASE_URL = "http://localhost:5000";
+const BASE_URL = "https://uselessly-monitor-lagging.ngrok-free.dev";
 
 /* ---------- theme ---------- */
 
