@@ -186,18 +186,8 @@
       <button type="button" class="btn btn-primary" onclick="startCamera('attendance')">
         <span class="shutter-dot"></span>Capture Face
       </button>
-      <label class="btn btn-secondary">
-        Upload from Gallery
-        <input type="file" accept="image/*" hidden onchange="handleFile(event,'attendance')">
-      </label>
-      <input type="file" accept="image/*" capture="user" hidden id="fallback-attendance" onchange="handleFile(event,'attendance')">
-    </div>
-    <div class="capture-stack" id="streamControls-attendance" style="display:none">
-      <button type="button" class="btn btn-primary" onclick="capturePhoto('attendance')">
-        <span class="shutter-dot"></span>Capture Photo
-      </button>
-      <button type="button" class="btn btn-secondary" onclick="cancelCamera('attendance')">Cancel</button>
-    </div>
+     
+    
 
     <div class="readout" id="readout-attendance">Waiting for image…</div>
   </div>
