@@ -1,5 +1,5 @@
-// Change this if your backend runs somewhere other than localhost:5000
-
+// BASE_URL now comes from config.js (loaded before this file in index.html) —
+// edit config.js when your backend URL changes, not this file.
 
 /* ---------- theme ---------- */
 
@@ -40,9 +40,6 @@ function openPanel(tool){
   document.querySelector(`.node[data-tool="${tool}"]`).classList.add('active');
   document.getElementById('panel-' + tool).scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-  // The attendance panel shows a real, server-backed list of who's
-  // registered — refresh it every time the panel is opened so it never
-  // shows stale data.
   if(tool === 'attendance'){
     loadRegisteredStudents();
   }
@@ -54,7 +51,7 @@ function closePanel(){
   document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
 }
 
-/* ---------- registered students list (NEW) ---------- */
+/* ---------- registered students list ---------- */
 
 async function loadRegisteredStudents(){
   const listEl = document.getElementById('student-list');
@@ -127,7 +124,6 @@ async function startCamera(kind){
   const video = document.getElementById('video-' + kind);
 
   if(!cameraSupported()){
-    // Not available (e.g. file:// page, unsupported browser) — fall back to native capture input.
     document.getElementById('fallback-' + kind).click();
     return;
   }
@@ -172,7 +168,6 @@ function capturePhoto(kind){
   canvas.height = video.videoHeight || 480;
 
   const ctx = canvas.getContext('2d');
-  // Mirror the snapshot to match the mirrored preview (selfie-style).
   ctx.translate(canvas.width, 0);
   ctx.scale(-1, 1);
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -217,8 +212,6 @@ function renderResult(kind, data, ok){
   el.className = ok ? 'readout' : 'readout err';
   el.textContent = JSON.stringify(data, null, 2);
 
-  // After a successful registration, refresh the real students list so
-  // the new entry shows up immediately (not just after a manual refresh).
   if(kind === 'register' && ok){
     loadRegisteredStudents();
     document.getElementById('reg-name').value = '';
@@ -230,7 +223,7 @@ function handleFile(event, kind){
   const file = event.target.files[0];
   if(!file) return;
   processImage(file, kind);
-  event.target.value = ''; // allow re-selecting the same file
+  event.target.value = '';
 }
 
 async function processImage(file, kind){
@@ -267,4 +260,3 @@ async function processImage(file, kind){
     }, false);
   }
 }
-
