@@ -163,12 +163,11 @@
 
     <div class="readout" id="readout-register">No registration yet.</div>
 
-    <!-- NEW: real, server-backed list of who's registered so far -->
+    <!-- real, server-backed list of who's registered so far -->
     <div class="step-label" style="margin-top:18px">Registered students</div>
     <div class="student-list" id="student-list">
-  
-</div>
-
+      <span class="vf-hint" style="text-transform:none;letter-spacing:0">Loading…</span>
+    </div>
   </div>
 
   <div class="sub-block">
@@ -187,13 +186,22 @@
       <button type="button" class="btn btn-primary" onclick="startCamera('attendance')">
         <span class="shutter-dot"></span>Capture Face
       </button>
-     
-    
+      <!-- No gallery upload here on purpose: attendance must come from a live
+           camera capture, so the anti-spoofing check has an actual fresh frame
+           to evaluate, not an arbitrary saved photo. -->
+      <input type="file" accept="image/*" capture="user" hidden id="fallback-attendance" onchange="handleFile(event,'attendance')">
+    </div>
+    <div class="capture-stack" id="streamControls-attendance" style="display:none">
+      <button type="button" class="btn btn-primary" onclick="capturePhoto('attendance')">
+        <span class="shutter-dot"></span>Capture Photo
+      </button>
+      <button type="button" class="btn btn-secondary" onclick="cancelCamera('attendance')">Cancel</button>
+    </div>
 
     <div class="readout" id="readout-attendance">Waiting for image…</div>
   </div>
 </section>
-  
+
 <script src="config.js"></script>
 <script src="script.js"></script>
 <script>
