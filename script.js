@@ -54,7 +54,7 @@ function closePanel(){
 /* ---------- registered students list ---------- */
 
 async function loadRegisteredStudents() {
-  const response = await fetch(`${CONFIG.uselessly-monitor-lagging.ngrok-free.dev}/attendance/students`);
+  const response = await fetch(`${CONFIG.backendurl}/attendance/students`);
   const data = await response.json();
   console.log("Fetched students:", data);
 
