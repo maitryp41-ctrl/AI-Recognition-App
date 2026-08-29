@@ -56,6 +56,7 @@ function closePanel(){
 async function loadRegisteredStudents() {
   const response = await fetch(`${CONFIG.uselessly-monitor-lagging.ngrok-free.dev}/attendance/students`);
   const data = await response.json();
+  console.log("Fetched students:", data);
 
   const listContainer = document.getElementById("student-list");
   listContainer.innerHTML = "";
