@@ -1,4 +1,4 @@
-// BASE_URL now comes from config.js (loaded before this file in index.html) —
+// BASE_URL comes from config.js (loaded before this file in index.html) —
 // edit config.js when your backend URL changes, not this file.
 
 /* ---------- theme ---------- */
@@ -53,26 +53,41 @@ function closePanel(){
 
 /* ---------- registered students list ---------- */
 
-async function loadRegisteredStudents() {
-  const response = await fetch(`${CONFIG.backendurl}/attendance/students`);
-  const data = await response.json();
-  console.log("Fetched students:", data);
+async function loadRegisteredStudents(){
+  const listEl = document.getElementById('student-list');
+  if(!listEl) return;
+  listEl.innerHTML = '<span class="vf-hint" style="text-transform:none;letter-spacing:0">Loading…</span>';
 
-  const listContainer = document.getElementById("student-list");
-  listContainer.innerHTML = "";
+  try{
+    const res = await fetch(BASE_URL + '/attendance/students');
+    const data = await res.json();
 
-  if (data.success && data.count > 0) {
-    data.students.forEach(student => {
-      const item = document.createElement("li");
-      item.textContent = `${student.user_id} — ${student.name}`;
-      listContainer.appendChild(item);
+    if(!data.success){
+      listEl.innerHTML = '<span class="vf-hint" style="text-transform:none;letter-spacing:0">Could not load registered students.</span>';
+      return;
+    }
+
+    if(data.count === 0){
+      listEl.innerHTML = '<span class="vf-hint" style="text-transform:none;letter-spacing:0">No registration yet.</span>';
+      return;
+    }
+
+    listEl.innerHTML = '';
+    data.students.forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'student-row';
+      row.innerHTML = `
+        <span><span class="student-name">${escapeHtml(s.name)}</span> &nbsp;
+        <span class="student-id">#${escapeHtml(s.user_id)}</span></span>
+        <button type="button" class="student-remove" title="Remove" onclick="removeStudent('${encodeURIComponent(s.user_id)}')">✕</button>
+      `;
+      listEl.appendChild(row);
     });
-  } else {
-    listContainer.textContent = "No registration yet.";
+  }catch(err){
+    listEl.innerHTML = '<span class="vf-hint" style="text-transform:none;letter-spacing:0">Could not reach backend.</span>';
+    console.error('Failed to load registered students:', err);
   }
 }
-
-document.addEventListener("DOMContentLoaded", loadRegisteredStudents);
 
 async function removeStudent(userId){
   try{
@@ -191,7 +206,18 @@ function stopLoading(kind){
   if(el._interval) clearInterval(el._interval);
 }
 
+function renderResult(kind, data, ok){
+  stopLoading(kind);
+  const el = document.getElementById('readout-' + kind);
+  el.className = ok ? 'readout' : 'readout err';
+  el.textContent = JSON.stringify(data, null, 2);
 
+  if(kind === 'register' && ok){
+    loadRegisteredStudents();
+    document.getElementById('reg-name').value = '';
+    document.getElementById('reg-id').value = '';
+  }
+}
 
 function handleFile(event, kind){
   const file = event.target.files[0];
@@ -202,19 +228,6 @@ function handleFile(event, kind){
 
 async function processImage(file, kind){
   showPreview(kind === 'register' ? 'register' : kind, file);
-function renderResult(kind, data, ok){
-  stopLoading(kind);
-  const el = document.getElementById('readout-' + kind);
-  el.className = ok ? 'readout' : 'readout err';
-  el.textContent = JSON.stringify(data, null, 2);
-
-  // 👇 Add this block here
-  if(kind === 'register' && ok){
-    loadRegisteredStudents(); // refresh permanent list
-    document.getElementById('reg-name').value = '';
-    document.getElementById('reg-id').value = '';
-  }
-}
 
   const formData = new FormData();
   formData.append('image', file);
