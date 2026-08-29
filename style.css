@@ -262,8 +262,36 @@ input[type=text]::placeholder{ color: var(--text-dim); }
 .readout.loading{ color: var(--text-dim); }
 .readout.err{ color: #ff6b6b; border-color: #5a2323; }
 
+/* ---------- registered students list (NEW) ---------- */
+
+.student-list{
+  background: var(--bg); border: 1px solid var(--line);
+  border-radius: 8px; padding: 6px;
+  display: flex; flex-direction: column; gap: 4px;
+  min-height: 44px;
+}
+
+.student-row{
+  display:flex; align-items:center; justify-content:space-between; gap: 10px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-family: var(--font-mono); font-size: 12.5px;
+  background: var(--panel);
+}
+
+.student-row .student-name{ color: var(--text); font-weight: 500; }
+.student-row .student-id{ color: var(--text-dim); }
+
+.student-row .student-remove{
+  border: none; background: transparent; color: var(--text-dim);
+  cursor: pointer; font-size: 13px; line-height: 1;
+  padding: 2px 6px; border-radius: 4px;
+}
+.student-row .student-remove:hover{ color: #ff6b6b; }
+
 @media (max-width: 480px){
   .grid{ gap: 24px; }
   .node{ width: 150px; }
   .ring{ width: 130px; height: 130px; }
 }
+
