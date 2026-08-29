@@ -39,12 +39,75 @@ function openPanel(tool){
   document.getElementById('panel-' + tool).classList.add('open');
   document.querySelector(`.node[data-tool="${tool}"]`).classList.add('active');
   document.getElementById('panel-' + tool).scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  // The attendance panel shows a real, server-backed list of who's
+  // registered — refresh it every time the panel is opened so it never
+  // shows stale data.
+  if(tool === 'attendance'){
+    loadRegisteredStudents();
+  }
 }
 
 function closePanel(){
   stopAllCameras();
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
   document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
+}
+
+/* ---------- registered students list (NEW) ---------- */
+
+async function loadRegisteredStudents(){
+  const listEl = document.getElementById('student-list');
+  if(!listEl) return;
+  listEl.innerHTML = '<span class="vf-hint" style="text-transform:none;letter-spacing:0">Loading…</span>';
+
+  try{
+    const res = await fetch(BASE_URL + '/attendance/students');
+    const data = await res.json();
+
+    if(!data.success){
+      listEl.innerHTML = '<span class="vf-hint" style="text-transform:none;letter-spacing:0">Could not load registered students.</span>';
+      return;
+    }
+
+    if(data.count === 0){
+      listEl.innerHTML = '<span class="vf-hint" style="text-transform:none;letter-spacing:0">No registration yet.</span>';
+      return;
+    }
+
+    listEl.innerHTML = '';
+    data.students.forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'student-row';
+      row.innerHTML = `
+        <span><span class="student-name">${escapeHtml(s.name)}</span> &nbsp;
+        <span class="student-id">#${escapeHtml(s.user_id)}</span></span>
+        <button type="button" class="student-remove" title="Remove" onclick="removeStudent('${encodeURIComponent(s.user_id)}')">✕</button>
+      `;
+      listEl.appendChild(row);
+    });
+  }catch(err){
+    listEl.innerHTML = '<span class="vf-hint" style="text-transform:none;letter-spacing:0">Could not reach backend.</span>';
+    console.error('Failed to load registered students:', err);
+  }
+}
+
+async function removeStudent(userId){
+  try{
+    const res = await fetch(BASE_URL + '/attendance/students/' + userId, { method: 'DELETE' });
+    const data = await res.json();
+    if(data.success){
+      loadRegisteredStudents();
+    }
+  }catch(err){
+    console.error('Failed to remove student:', err);
+  }
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 /* ---------- live webcam capture ---------- */
@@ -153,6 +216,14 @@ function renderResult(kind, data, ok){
   const el = document.getElementById('readout-' + kind);
   el.className = ok ? 'readout' : 'readout err';
   el.textContent = JSON.stringify(data, null, 2);
+
+  // After a successful registration, refresh the real students list so
+  // the new entry shows up immediately (not just after a manual refresh).
+  if(kind === 'register' && ok){
+    loadRegisteredStudents();
+    document.getElementById('reg-name').value = '';
+    document.getElementById('reg-id').value = '';
+  }
 }
 
 function handleFile(event, kind){
@@ -196,3 +267,4 @@ async function processImage(file, kind){
     }, false);
   }
 }
+
