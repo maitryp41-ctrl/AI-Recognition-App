@@ -268,4 +268,3 @@ input[type=text]::placeholder{ color: var(--text-dim); }
   .node{ width: 150px; }
   .ring{ width: 130px; height: 130px; }
 }
-
