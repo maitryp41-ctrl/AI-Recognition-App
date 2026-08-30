@@ -144,6 +144,14 @@ async function startCamera(kind){
     vf.classList.remove('has-image');
     document.getElementById('controls-' + kind).style.display = 'none';
     document.getElementById('streamControls-' + kind).style.display = 'flex';
+
+    if(kind === 'attendance'){
+      // Continuous scanning: there's no manual "Capture Photo" step for
+      // attendance. Wait until the video element actually has a decoded
+      // frame ready, then start firing capture attempts at the backend
+      // on an interval (see startAttendanceScan below).
+      video.onloadeddata = () => startAttendanceScan();
+    }
   }catch(err){
     console.warn('Camera unavailable, falling back to native capture:', err);
     document.getElementById('fallback-' + kind).click();
@@ -156,6 +164,9 @@ function stopCamera(kind){
     stream.getTracks().forEach(track => track.stop());
     delete activeStreams[kind];
   }
+  if(kind === 'attendance'){
+    stopAttendanceScan();
+  }
   const vf = document.getElementById('vf-' + kind);
   vf.classList.remove('streaming');
   document.getElementById('controls-' + kind).style.display = 'flex';
@@ -164,6 +175,13 @@ function stopCamera(kind){
 
 function cancelCamera(kind){
   stopCamera(kind);
+  if(kind === 'attendance'){
+    // A manual stop is a neutral outcome, not an error — reset the
+    // readout instead of leaving whatever "scanning…" text was last shown.
+    const el = document.getElementById('readout-attendance');
+    el.className = 'readout';
+    el.textContent = 'Waiting for image…';
+  }
 }
 
 function capturePhoto(kind){
@@ -185,7 +203,113 @@ function capturePhoto(kind){
   }, 'image/jpeg', 0.92);
 }
 
-/* ---------- capture + upload ---------- */
+/* ---------- continuous attendance scanning ----------
+   Object recognition, authenticity, and registration all stay
+   single-shot (open camera -> Capture Photo -> one upload). Attendance
+   is the only flow that scans continuously: once the camera is open we
+   grab a frame every ATTENDANCE_SCAN_INTERVAL_MS and POST it to
+   /attendance, stopping automatically on a match, on manual "Stop
+   Scanning", or after ATTENDANCE_SCAN_TIMEOUT_MS with no match.
+
+   Heads up: this fires a full recognition pipeline call on the backend
+   roughly every 1.5–2s for as long as the camera is open, which is
+   noticeably CPU-heavy server-side (e.g. a DeepFace-style backend on a
+   laptop). The auto-stop-on-success and auto-timeout below exist
+   specifically to bound that cost. */
+
+const ATTENDANCE_SCAN_INTERVAL_MS = 1800;
+const ATTENDANCE_SCAN_TIMEOUT_MS = 30000;
+
+let attendanceScanTimer = null;
+let attendanceScanTimeoutTimer = null;
+let attendanceScanBusy = false;
+
+function startAttendanceScan(){
+  stopAttendanceScan(); // clear any leftover timers before starting fresh
+
+  const el = document.getElementById('readout-attendance');
+  el.className = 'readout loading';
+  el.textContent = 'Scanning…';
+
+  attendanceScanTimer = setInterval(() => {
+    if(attendanceScanBusy) return; // don't overlap in-flight requests
+    captureAttendanceFrame();
+  }, ATTENDANCE_SCAN_INTERVAL_MS);
+
+  attendanceScanTimeoutTimer = setTimeout(() => {
+    stopAttendanceScan();
+    stopCamera('attendance');
+    const el2 = document.getElementById('readout-attendance');
+    el2.className = 'readout err';
+    el2.textContent = 'No match found within 30s. Try again.';
+  }, ATTENDANCE_SCAN_TIMEOUT_MS);
+}
+
+function stopAttendanceScan(){
+  if(attendanceScanTimer){ clearInterval(attendanceScanTimer); attendanceScanTimer = null; }
+  if(attendanceScanTimeoutTimer){ clearTimeout(attendanceScanTimeoutTimer); attendanceScanTimeoutTimer = null; }
+  attendanceScanBusy = false;
+}
+
+function captureAttendanceFrame(){
+  const video = document.getElementById('video-attendance');
+  const canvas = document.getElementById('canvas-attendance');
+  if(!video || !video.videoWidth) return; // stream not ready yet, skip this tick
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  canvas.toBlob((blob) => {
+    if(!blob) return;
+    attendanceScanBusy = true;
+    const file = new File([blob], 'attendance-scan.jpg', { type: 'image/jpeg' });
+    sendAttendanceFrame(file);
+  }, 'image/jpeg', 0.85);
+}
+
+async function sendAttendanceFrame(file){
+  showPreview('attendance', file);
+
+  const formData = new FormData();
+  formData.append('image', file);
+
+  try{
+    const res = await fetch(BASE_URL + '/attendance', {
+      method: 'POST',
+      headers: { 'ngrok-skip-browser-warning': 'true' },
+      body: formData
+    });
+    const data = await res.json();
+
+    if(res.ok && data.success !== false){
+      // Match found — stop the loop, close the camera, show the final result.
+      stopAttendanceScan();
+      stopCamera('attendance');
+      renderResult('attendance', data, true);
+      return;
+    }
+
+    // No match on this frame — keep scanning, just update the live status.
+    const el = document.getElementById('readout-attendance');
+    if(el.className !== 'readout err'){
+      el.className = 'readout loading';
+      el.textContent = 'Scanning… no match yet';
+    }
+  }catch(err){
+    const el = document.getElementById('readout-attendance');
+    el.className = 'readout loading';
+    el.textContent = 'Scanning… (backend unreachable, retrying)';
+    console.error('Attendance scan frame failed:', err);
+  }finally{
+    attendanceScanBusy = false;
+  }
+}
+
+/* ---------- capture + upload (single-shot flows) ---------- */
 
 function showPreview(kind, file){
   const vf = document.getElementById('vf-' + kind);
@@ -334,4 +458,3 @@ async function processImage(file, kind){
     }, false);
   }
 }
-
