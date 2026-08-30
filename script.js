@@ -215,13 +215,78 @@ function renderResult(kind, data, ok){
   stopLoading(kind);
   const el = document.getElementById('readout-' + kind);
   el.className = ok ? 'readout' : 'readout err';
-  el.textContent = JSON.stringify(data, null, 2);
+
+  if(!ok){
+    el.textContent = JSON.stringify(data, null, 2);
+    return;
+  }
+
+  if(kind === 'object'){
+    renderObjectResult(el, data);
+  } else if(kind === 'authenticity'){
+    renderAuthenticityResult(el, data);
+  } else {
+    // register / attendance keep the raw JSON readout
+    el.textContent = JSON.stringify(data, null, 2);
+  }
 
   if(kind === 'register' && ok){
     loadRegisteredStudents();
     document.getElementById('reg-name').value = '';
     document.getElementById('reg-id').value = '';
   }
+}
+
+// Shows only the detected object names, one per line — no raw JSON.
+function renderObjectResult(el, data){
+  const detections = data.detections || [];
+  if(detections.length === 0){
+    el.textContent = "No objects detected.";
+    return;
+  }
+  el.textContent = detections.map(d => d.label).join("\n");
+}
+
+// Shows Real = __%, DeepFake = __%, and a final Result verdict based on
+// whichever percentage is higher. The backend's exact field names for
+// /authenticity aren't known here, so this tries several common shapes
+// before giving up and showing the raw data as a fallback.
+function renderAuthenticityResult(el, data){
+  const toPct = (v) => {
+    if(v === undefined || v === null) return null;
+    const n = Number(v);
+    if(Number.isNaN(n)) return null;
+    return Math.round((n <= 1 ? n * 100 : n) * 10) / 10;
+  };
+
+  let realPct = null, fakePct = null;
+
+  if(data.real !== undefined && (data.fake !== undefined || data.deepfake !== undefined)){
+    realPct = toPct(data.real);
+    fakePct = toPct(data.fake !== undefined ? data.fake : data.deepfake);
+  } else if(data.real_confidence !== undefined){
+    realPct = toPct(data.real_confidence);
+    fakePct = data.fake_confidence !== undefined
+      ? toPct(data.fake_confidence)
+      : Math.round((100 - realPct) * 10) / 10;
+  } else if(data.real_percentage !== undefined){
+    realPct = toPct(data.real_percentage / 100);
+    const fakeSrc = data.deepfake_percentage !== undefined ? data.deepfake_percentage : data.fake_percentage;
+    fakePct = toPct(fakeSrc / 100);
+  } else if(data.confidence !== undefined && data.label !== undefined){
+    const label = String(data.label).toLowerCase();
+    const conf = toPct(data.confidence);
+    if(label.includes('real')){ realPct = conf; fakePct = Math.round((100 - conf) * 10) / 10; }
+    else { fakePct = conf; realPct = Math.round((100 - conf) * 10) / 10; }
+  }
+
+  if(realPct === null || fakePct === null){
+    el.textContent = "Could not read Real/DeepFake percentages from the backend response.\nRaw data:\n" + JSON.stringify(data, null, 2);
+    return;
+  }
+
+  const verdict = realPct >= fakePct ? "Real" : "AI";
+  el.textContent = `Real = ${realPct}%\nDeepFake = ${fakePct}%\n\nResult = "${verdict}"`;
 }
 
 function handleFile(event, kind){
@@ -269,3 +334,4 @@ async function processImage(file, kind){
     }, false);
   }
 }
+
