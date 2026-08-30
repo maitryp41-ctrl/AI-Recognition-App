@@ -206,6 +206,22 @@
 
     <div class="readout" id="readout-attendance">Waiting for image…</div>
   </div>
+
+  <div class="sub-block">
+    <div class="step-label">Step 3 — Download reports</div>
+    <!--
+      Both buttons hit the backend on demand. If the day/month in question
+      has already ended, the server returns the permanently finalized file
+      (already saved by scheduler.py); otherwise it builds a live snapshot
+      on the fly — today's/this month's data won't be "official" until
+      scheduler.py finalizes it after midnight / after the 1st.
+    -->
+    <div class="capture-stack">
+      <button type="button" class="btn btn-report" onclick="downloadReport('daily')">Download Daily Attendance (.xlsx)</button>
+      <button type="button" class="btn btn-report" onclick="downloadReport('monthly')">Download Monthly Attendance (.xlsx)</button>
+    </div>
+    <div class="readout" id="readout-reports">Downloads today's / this month's attendance so far.</div>
+  </div>
 </section>
 
 <script src="config.js"></script>
