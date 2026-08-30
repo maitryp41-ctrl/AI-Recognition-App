@@ -184,9 +184,16 @@
       <span class="vf-hint">No image yet</span>
     </div>
 
+    <!--
+      Continuous scanning: opening the camera immediately starts a scan
+      loop (see script.js: startAttendanceScan). There is no separate
+      manual "Capture Photo" step here on purpose — the loop keeps
+      sending frames to the backend until it gets a match, is manually
+      stopped, or times out.
+    -->
     <div class="capture-stack" id="controls-attendance">
       <button type="button" class="btn btn-primary" onclick="startCamera('attendance')">
-        <span class="shutter-dot"></span>Capture Face
+        <span class="shutter-dot"></span>Start Scanning
       </button>
       <!-- No gallery upload here on purpose: attendance must come from a live
            camera capture, so the anti-spoofing check has an actual fresh frame
@@ -194,10 +201,7 @@
       <input type="file" accept="image/*" capture="user" hidden id="fallback-attendance" onchange="handleFile(event,'attendance')">
     </div>
     <div class="capture-stack" id="streamControls-attendance" style="display:none">
-      <button type="button" class="btn btn-primary" onclick="capturePhoto('attendance')">
-        <span class="shutter-dot"></span>Capture Photo
-      </button>
-      <button type="button" class="btn btn-secondary" onclick="cancelCamera('attendance')">Cancel</button>
+      <button type="button" class="btn btn-secondary" onclick="cancelCamera('attendance')">Stop Scanning</button>
     </div>
 
     <div class="readout" id="readout-attendance">Waiting for image…</div>
