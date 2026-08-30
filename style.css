@@ -1,519 +1,429 @@
-// BASE_URL comes from config.js (loaded before this file in index.html) —
-// edit config.js when your backend URL changes, not this file.
+/* ==========================================================================
+   AI Recognition Suite — stylesheet
+   Matches the classes used in index.html / script.js
+   ========================================================================== */
 
-/* ---------- theme ---------- */
+:root,
+[data-theme="dark"] {
+  --bg: #0a0d12;
+  --bg-elevated: #12161d;
+  --bg-panel: #161b23;
+  --border: #232a35;
+  --text: #eef1f6;
+  --text-dim: #8b95a5;
+  --text-faint: #5a6373;
 
-function getStoredTheme(){
-  try { return localStorage.getItem('ai-recognition-theme'); }
-  catch(e){ return null; }
+  --amber: #f5a524;
+  --amber-dim: rgba(245, 165, 36, 0.15);
+  --cyan: #22d3ee;
+  --cyan-dim: rgba(34, 211, 238, 0.15);
+  --violet: #a78bfa;
+  --violet-dim: rgba(167, 139, 250, 0.15);
+
+  --danger: #f87171;
+  --success: #4ade80;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
-function storeTheme(theme){
-  try { localStorage.setItem('ai-recognition-theme', theme); }
-  catch(e){ /* ignore if storage unavailable */ }
+
+[data-theme="light"] {
+  --bg: #f6f7f9;
+  --bg-elevated: #ffffff;
+  --bg-panel: #ffffff;
+  --border: #e1e5eb;
+  --text: #12161d;
+  --text-dim: #5a6373;
+  --text-faint: #8b95a5;
+
+  --amber-dim: rgba(245, 165, 36, 0.12);
+  --cyan-dim: rgba(34, 211, 238, 0.12);
+  --violet-dim: rgba(167, 139, 250, 0.12);
 }
 
-(function initTheme(){
-  const saved = getStoredTheme();
-  const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-  const theme = saved || (prefersLight ? 'light' : 'dark');
-  document.documentElement.setAttribute('data-theme', theme);
-})();
+* { box-sizing: border-box; }
 
-function toggleTheme(){
-  const current = document.documentElement.getAttribute('data-theme');
-  const next = current === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  storeTheme(next);
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- topbar ---------- */
+
+.topbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 24px 0;
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.theme-toggle:hover { border-color: var(--text-dim); transform: scale(1.05); }
+.theme-toggle svg { width: 18px; height: 18px; }
+
+.theme-toggle .icon-sun,
+.theme-toggle .icon-moon { display: none; }
+
+[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+[data-theme="light"] .theme-toggle .icon-moon { display: block; }
+
+/* ---------- title ---------- */
+
+.main-title {
+  text-align: center;
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 24px 0 48px;
+}
+
+/* ---------- node grid ---------- */
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  padding: 0 24px 64px;
+}
+
+.grid-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 40px;
+}
+
+.node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 180px;
+  padding: 28px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.node:hover { transform: translateY(-4px); }
+.node.active { box-shadow: 0 0 0 2px var(--accent, var(--amber)); }
+
+.node[data-accent="amber"] { --accent: var(--amber); }
+.node[data-accent="cyan"]  { --accent: var(--cyan); }
+.node[data-accent="violet"]{ --accent: var(--violet); }
+
+.node[data-accent="amber"]:hover  { border-color: var(--amber); }
+.node[data-accent="cyan"]:hover   { border-color: var(--cyan); }
+.node[data-accent="violet"]:hover { border-color: var(--violet); }
+
+.ring {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent, var(--amber));
+  background: var(--amber-dim);
+  color: var(--accent, var(--amber));
+}
+.node[data-accent="cyan"] .ring   { background: var(--cyan-dim); }
+.node[data-accent="violet"] .ring { background: var(--violet-dim); }
+
+.ring svg { width: 30px; height: 30px; }
+
+.node-label {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
 }
 
 /* ---------- panels ---------- */
 
-function stopAllCameras(){
-  Object.keys(activeStreams).forEach(stopCamera);
+.panel {
+  display: none;
+  max-width: 640px;
+  margin: 0 auto 48px;
+  padding: 24px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+.panel.open { display: block; }
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.panel-head h2 {
+  font-size: 20px;
+  margin: 0;
 }
 
-function openPanel(tool){
-  stopAllCameras();
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
-  document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
-  document.getElementById('panel-' + tool).classList.add('open');
-  document.querySelector(`.node[data-tool="${tool}"]`).classList.add('active');
-  document.getElementById('panel-' + tool).scrollIntoView({ behavior: 'smooth', block: 'center' });
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+}
+.icon-btn:hover { color: var(--text); border-color: var(--text-dim); }
 
-  if(tool === 'attendance'){
-    loadRegisteredStudents();
-  }
+/* ---------- viewfinder ---------- */
+
+.viewfinder {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  background: #000;
+  overflow: hidden;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.viewfinder.small { aspect-ratio: 16 / 10; max-height: 220px; }
+
+.viewfinder .corner {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--amber);
+  opacity: 0.8;
+  z-index: 2;
+}
+.corner.tl { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+.corner.tr { top: 10px; right: 10px; border-left: none; border-bottom: none; }
+.corner.bl { bottom: 10px; left: 10px; border-right: none; border-top: none; }
+.corner.br { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+
+.scan-line {
+  position: absolute;
+  left: 5%;
+  width: 90%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  top: 0;
+  opacity: 0;
+  z-index: 2;
+}
+.viewfinder.streaming .scan-line {
+  opacity: 1;
+  animation: scan 2.2s ease-in-out infinite;
+}
+@keyframes scan {
+  0%   { top: 4%; }
+  50%  { top: 92%; }
+  100% { top: 4%; }
 }
 
-function closePanel(){
-  stopAllCameras();
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
-  document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
+.vf-video, .vf-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
 }
+.vf-video { transform: scaleX(-1); }
+
+.viewfinder.streaming .vf-video { display: block; }
+.viewfinder.has-image .vf-image { display: block; }
+
+.vf-hint {
+  position: relative;
+  z-index: 1;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.viewfinder.streaming .vf-hint,
+.viewfinder.has-image .vf-hint { display: none; }
+
+/* ---------- buttons ---------- */
+
+.capture-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: var(--amber);
+  color: #12161d;
+}
+.btn-primary:hover { opacity: 0.9; }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+.btn-secondary:hover { border-color: var(--text-dim); }
+
+.btn-report {
+  background: var(--bg-elevated);
+  color: var(--cyan);
+  border-color: var(--border);
+}
+.btn-report:hover { border-color: var(--cyan); }
+
+.shutter-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+}
+
+/* ---------- readouts ---------- */
+
+.readout {
+  white-space: pre-wrap;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.readout.loading { color: var(--cyan); }
+.readout.err { color: var(--danger); border-color: var(--danger); }
+
+/* ---------- attendance sub-blocks ---------- */
+
+.sub-block {
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.sub-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+.step-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 10px;
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 11px 14px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 14px;
+}
+input[type="text"]:focus {
+  outline: none;
+  border-color: var(--amber);
+}
+input[type="text"]::placeholder { color: var(--text-faint); }
 
 /* ---------- registered students list ---------- */
 
-async function loadRegisteredStudents(){
-  const listEl = document.getElementById('student-list');
-  if(!listEl) return;
-  listEl.innerHTML = '<span class="vf-hint" style="text-transform:none;letter-spacing:0">Loading…</span>';
-
-  try{
-    const res = await fetch(BASE_URL + '/attendance/registered', {
-      headers: { 'ngrok-skip-browser-warning': 'true' }
-    });
-    const data = await res.json();
-
-    if(!data.success){
-      listEl.innerHTML = '<span class="vf-hint" style="text-transform:none;letter-spacing:0">Could not load registered students.</span>';
-      return;
-    }
-
-    if(!data.students || data.students.length === 0){
-      listEl.innerHTML = '<span class="vf-hint" style="text-transform:none;letter-spacing:0">No registration yet.</span>';
-      return;
-    }
-
-    listEl.innerHTML = '';
-    data.students.forEach(s => {
-      const row = document.createElement('div');
-      row.className = 'student-row';
-      row.innerHTML = `
-        <span><span class="student-name">${escapeHtml(s.name)}</span> &nbsp;
-        <span class="student-id">#${escapeHtml(s.user_id)}</span></span>
-        <button type="button" class="student-remove" title="Remove" onclick="removeStudent('${encodeURIComponent(s.user_id)}')">✕</button>
-      `;
-      listEl.appendChild(row);
-    });
-  }catch(err){
-    listEl.innerHTML = '<span class="vf-hint" style="text-transform:none;letter-spacing:0">Could not reach backend.</span>';
-    console.error('Failed to load registered students:', err);
-  }
+.student-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
-async function removeStudent(userId){
-  try{
-    const res = await fetch(BASE_URL + '/attendance/registered/' + userId, {
-      method: 'DELETE',
-      headers: { 'ngrok-skip-browser-warning': 'true' }
-    });
-    const data = await res.json();
-    if(data.success){
-      loadRegisteredStudents();
-    }
-  }catch(err){
-    console.error('Failed to remove student:', err);
-  }
+.student-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  font-size: 13px;
 }
 
-function escapeHtml(str){
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+.student-name { font-weight: 600; }
+.student-id {
+  font-family: var(--font-mono);
+  color: var(--text-faint);
+  font-size: 12px;
 }
 
-/* ---------- live webcam capture ---------- */
+.student-remove {
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+.student-remove:hover { color: var(--danger); background: rgba(248, 113, 113, 0.1); }
 
-const activeStreams = {};
+/* ---------- responsive ---------- */
 
-function facingModeFor(kind){
-  return (kind === 'register' || kind === 'attendance') ? 'user' : 'environment';
+@media (max-width: 480px) {
+  .node { width: 140px; padding: 20px 12px; }
+  .panel { margin-left: 12px; margin-right: 12px; padding: 18px; }
 }
 
-function cameraSupported(){
-  return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+/* ---------- accessibility ---------- */
+
+:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
 }
 
-async function startCamera(kind){
-  const vf = document.getElementById('vf-' + kind);
-  const video = document.getElementById('video-' + kind);
-
-  if(!cameraSupported()){
-    document.getElementById('fallback-' + kind).click();
-    return;
-  }
-
-  try{
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: facingModeFor(kind) },
-      audio: false
-    });
-    activeStreams[kind] = stream;
-    video.srcObject = stream;
-    vf.classList.add('streaming');
-    vf.classList.remove('has-image');
-    document.getElementById('controls-' + kind).style.display = 'none';
-    document.getElementById('streamControls-' + kind).style.display = 'flex';
-
-    if(kind === 'attendance'){
-      // Continuous scanning: there's no manual "Capture Photo" step for
-      // attendance. Wait until the video element actually has a decoded
-      // frame ready, then start firing capture attempts at the backend
-      // on an interval (see startAttendanceScan below).
-      video.onloadeddata = () => startAttendanceScan();
-    }
-  }catch(err){
-    console.warn('Camera unavailable, falling back to native capture:', err);
-    document.getElementById('fallback-' + kind).click();
-  }
-}
-
-function stopCamera(kind){
-  const stream = activeStreams[kind];
-  if(stream){
-    stream.getTracks().forEach(track => track.stop());
-    delete activeStreams[kind];
-  }
-  if(kind === 'attendance'){
-    stopAttendanceScan();
-  }
-  const vf = document.getElementById('vf-' + kind);
-  vf.classList.remove('streaming');
-  document.getElementById('controls-' + kind).style.display = 'flex';
-  document.getElementById('streamControls-' + kind).style.display = 'none';
-}
-
-function cancelCamera(kind){
-  stopCamera(kind);
-  if(kind === 'attendance'){
-    // A manual stop is a neutral outcome, not an error — reset the
-    // readout instead of leaving whatever "scanning…" text was last shown.
-    const el = document.getElementById('readout-attendance');
-    el.className = 'readout';
-    el.textContent = 'Waiting for image…';
-  }
-}
-
-function capturePhoto(kind){
-  const video = document.getElementById('video-' + kind);
-  const canvas = document.getElementById('canvas-' + kind);
-  canvas.width = video.videoWidth || 640;
-  canvas.height = video.videoHeight || 480;
-
-  const ctx = canvas.getContext('2d');
-  ctx.translate(canvas.width, 0);
-  ctx.scale(-1, 1);
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-  canvas.toBlob((blob) => {
-    if(!blob) return;
-    const file = new File([blob], kind + '-capture.jpg', { type: 'image/jpeg' });
-    stopCamera(kind);
-    processImage(file, kind);
-  }, 'image/jpeg', 0.92);
-}
-
-/* ---------- continuous attendance scanning ----------
-   Object recognition, authenticity, and registration all stay
-   single-shot (open camera -> Capture Photo -> one upload). Attendance
-   is the only flow that scans continuously: once the camera is open we
-   grab a frame every ATTENDANCE_SCAN_INTERVAL_MS and POST it to
-   /attendance, stopping automatically on a match, on manual "Stop
-   Scanning", or after ATTENDANCE_SCAN_TIMEOUT_MS with no match.
-
-   Heads up: this fires a full recognition pipeline call on the backend
-   roughly every 1.5–2s for as long as the camera is open, which is
-   noticeably CPU-heavy server-side (e.g. a DeepFace-style backend on a
-   laptop). The auto-stop-on-success and auto-timeout below exist
-   specifically to bound that cost. */
-
-const ATTENDANCE_SCAN_INTERVAL_MS = 1800;
-const ATTENDANCE_SCAN_TIMEOUT_MS = 30000;
-
-let attendanceScanTimer = null;
-let attendanceScanTimeoutTimer = null;
-let attendanceScanBusy = false;
-
-function startAttendanceScan(){
-  stopAttendanceScan(); // clear any leftover timers before starting fresh
-
-  const el = document.getElementById('readout-attendance');
-  el.className = 'readout loading';
-  el.textContent = 'Scanning…';
-
-  attendanceScanTimer = setInterval(() => {
-    if(attendanceScanBusy) return; // don't overlap in-flight requests
-    captureAttendanceFrame();
-  }, ATTENDANCE_SCAN_INTERVAL_MS);
-
-  attendanceScanTimeoutTimer = setTimeout(() => {
-    stopAttendanceScan();
-    stopCamera('attendance');
-    const el2 = document.getElementById('readout-attendance');
-    el2.className = 'readout err';
-    el2.textContent = 'No match found within 30s. Try again.';
-  }, ATTENDANCE_SCAN_TIMEOUT_MS);
-}
-
-function stopAttendanceScan(){
-  if(attendanceScanTimer){ clearInterval(attendanceScanTimer); attendanceScanTimer = null; }
-  if(attendanceScanTimeoutTimer){ clearTimeout(attendanceScanTimeoutTimer); attendanceScanTimeoutTimer = null; }
-  attendanceScanBusy = false;
-}
-
-function captureAttendanceFrame(){
-  const video = document.getElementById('video-attendance');
-  const canvas = document.getElementById('canvas-attendance');
-  if(!video || !video.videoWidth) return; // stream not ready yet, skip this tick
-
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext('2d');
-  ctx.translate(canvas.width, 0);
-  ctx.scale(-1, 1);
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-  canvas.toBlob((blob) => {
-    if(!blob) return;
-    attendanceScanBusy = true;
-    const file = new File([blob], 'attendance-scan.jpg', { type: 'image/jpeg' });
-    sendAttendanceFrame(file);
-  }, 'image/jpeg', 0.85);
-}
-
-async function sendAttendanceFrame(file){
-  showPreview('attendance', file);
-
-  const formData = new FormData();
-  formData.append('image', file);
-
-  try{
-    const res = await fetch(BASE_URL + '/attendance', {
-      method: 'POST',
-      headers: { 'ngrok-skip-browser-warning': 'true' },
-      body: formData
-    });
-    const data = await res.json();
-
-    if(res.ok && data.success !== false){
-      // Match found — stop the loop, close the camera, show the final result.
-      stopAttendanceScan();
-      stopCamera('attendance');
-      renderResult('attendance', data, true);
-      return;
-    }
-
-    // No match on this frame — keep scanning, just update the live status.
-    const el = document.getElementById('readout-attendance');
-    if(el.className !== 'readout err'){
-      el.className = 'readout loading';
-      el.textContent = 'Scanning… no match yet';
-    }
-  }catch(err){
-    const el = document.getElementById('readout-attendance');
-    el.className = 'readout loading';
-    el.textContent = 'Scanning… (backend unreachable, retrying)';
-    console.error('Attendance scan frame failed:', err);
-  }finally{
-    attendanceScanBusy = false;
-  }
-}
-
-/* ---------- report downloads ---------- */
-
-async function downloadReport(kind){
-  const el = document.getElementById('readout-reports');
-  const url = kind === 'daily'
-    ? BASE_URL + '/attendance/reports/daily'
-    : BASE_URL + '/attendance/reports/monthly';
-
-  el.className = 'readout loading';
-  el.textContent = 'Preparing download…';
-
-  try{
-    const res = await fetch(url, { headers: { 'ngrok-skip-browser-warning': 'true' } });
-    if(!res.ok){
-      el.className = 'readout err';
-      el.textContent = 'Could not generate the report.';
-      return;
-    }
-
-    // Pull the real filename off the server's Content-Disposition header
-    // instead of hardcoding one, since it's date-based (e.g.
-    // "Daily_Attendance_30_August_2026.xlsx").
-    const disposition = res.headers.get('Content-Disposition') || '';
-    const match = disposition.match(/filename="?([^"]+)"?/);
-    const filename = match ? match[1] : (kind + '-attendance.xlsx');
-
-    const blob = await res.blob();
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-
-    el.className = 'readout';
-    el.textContent = 'Downloaded ' + filename;
-  }catch(err){
-    el.className = 'readout err';
-    el.textContent = 'Could not reach backend. Is app.py running at ' + BASE_URL + '?';
-    console.error('Report download failed:', err);
-  }
-}
-
-/* ---------- capture + upload (single-shot flows) ---------- */
-
-function showPreview(kind, file){
-  const vf = document.getElementById('vf-' + kind);
-  const img = document.getElementById('preview-' + kind);
-  if(!vf || !img) return;
-  img.src = URL.createObjectURL(file);
-  vf.classList.add('has-image');
-}
-
-function setLoading(kind){
-  const el = document.getElementById('readout-' + kind);
-  el.className = 'readout loading';
-  el.textContent = 'Sending to backend';
-  let dots = 0;
-  el._interval = setInterval(() => {
-    dots = (dots + 1) % 4;
-    el.textContent = 'Sending to backend' + '.'.repeat(dots);
-  }, 400);
-}
-
-function stopLoading(kind){
-  const el = document.getElementById('readout-' + kind);
-  if(el._interval) clearInterval(el._interval);
-}
-
-function renderResult(kind, data, ok){
-  stopLoading(kind);
-  const el = document.getElementById('readout-' + kind);
-  el.className = ok ? 'readout' : 'readout err';
-
-  if(!ok){
-    el.textContent = JSON.stringify(data, null, 2);
-    return;
-  }
-
-  if(kind === 'object'){
-    renderObjectResult(el, data);
-  } else if(kind === 'authenticity'){
-    renderAuthenticityResult(el, data);
-  } else {
-    // register / attendance keep the raw JSON readout
-    el.textContent = JSON.stringify(data, null, 2);
-  }
-
-  if(kind === 'register' && ok){
-    loadRegisteredStudents();
-    document.getElementById('reg-name').value = '';
-    document.getElementById('reg-id').value = '';
-  }
-}
-
-// Shows only the detected object names, one per line — no raw JSON.
-function renderObjectResult(el, data){
-  const detections = data.detections || [];
-  if(detections.length === 0){
-    el.textContent = "No objects detected.";
-    return;
-  }
-  el.textContent = detections.map(d => d.label).join("\n");
-}
-
-// Shows Real = __%, DeepFake = __%, and a final Result verdict based on
-// whichever percentage is higher. The backend's exact field names for
-// /authenticity aren't known here, so this tries several common shapes
-// before giving up and showing the raw data as a fallback.
-function renderAuthenticityResult(el, data){
-  const toPct = (v) => {
-    if(v === undefined || v === null) return null;
-    const n = Number(v);
-    if(Number.isNaN(n)) return null;
-    return Math.round((n <= 1 ? n * 100 : n) * 10) / 10;
-  };
-
-  let realPct = null, fakePct = null;
-
-  // Backend's actual shape: { "Real": "82.3%", "Fake": "17.7%", "Result": "Real"/"AI" }
-  if(data.Real !== undefined && data.Fake !== undefined){
-    const parsePctString = (v) => {
-      if(typeof v === 'number') return toPct(v);
-      const n = parseFloat(String(v).replace('%', ''));
-      return Number.isNaN(n) ? null : Math.round(n * 10) / 10;
-    };
-    realPct = parsePctString(data.Real);
-    fakePct = parsePctString(data.Fake);
-    if(realPct !== null && fakePct !== null){
-      const verdict = data.Result || (realPct >= fakePct ? "Real" : "AI");
-      el.textContent = `Real = ${realPct}%\nDeepFake = ${fakePct}%\n\nResult = "${verdict}"`;
-      return;
-    }
-  }
-
-  if(data.real !== undefined && (data.fake !== undefined || data.deepfake !== undefined)){
-    realPct = toPct(data.real);
-    fakePct = toPct(data.fake !== undefined ? data.fake : data.deepfake);
-  } else if(data.real_confidence !== undefined){
-    realPct = toPct(data.real_confidence);
-    fakePct = data.fake_confidence !== undefined
-      ? toPct(data.fake_confidence)
-      : Math.round((100 - realPct) * 10) / 10;
-  } else if(data.real_percentage !== undefined){
-    realPct = toPct(data.real_percentage / 100);
-    const fakeSrc = data.deepfake_percentage !== undefined ? data.deepfake_percentage : data.fake_percentage;
-    fakePct = toPct(fakeSrc / 100);
-  } else if(data.confidence !== undefined && data.label !== undefined){
-    const label = String(data.label).toLowerCase();
-    const conf = toPct(data.confidence);
-    if(label.includes('real')){ realPct = conf; fakePct = Math.round((100 - conf) * 10) / 10; }
-    else { fakePct = conf; realPct = Math.round((100 - conf) * 10) / 10; }
-  }
-
-  if(realPct === null || fakePct === null){
-    el.textContent = "Could not read Real/DeepFake percentages from the backend response.\nRaw data:\n" + JSON.stringify(data, null, 2);
-    return;
-  }
-
-  const verdict = realPct >= fakePct ? "Real" : "AI";
-  el.textContent = `Real = ${realPct}%\nDeepFake = ${fakePct}%\n\nResult = "${verdict}"`;
-}
-
-function handleFile(event, kind){
-  const file = event.target.files[0];
-  if(!file) return;
-  processImage(file, kind);
-  event.target.value = '';
-}
-
-async function processImage(file, kind){
-  showPreview(kind === 'register' ? 'register' : kind, file);
-
-  const formData = new FormData();
-  formData.append('image', file);
-
-  let url;
-  if(kind === 'object')       url = BASE_URL + '/object';
-  if(kind === 'authenticity') url = BASE_URL + '/authenticity';
-  if(kind === 'attendance')   url = BASE_URL + '/attendance';
-  if(kind === 'register'){
-    const name = document.getElementById('reg-name').value.trim();
-    const userId = document.getElementById('reg-id').value.trim();
-    if(!name || !userId){
-      renderResult('register', { error: "Enter both name and user ID before capturing a photo." }, false);
-      return;
-    }
-    formData.append('name', name);
-    formData.append('user_id', userId);
-    url = BASE_URL + '/attendance/register';
-  }
-
-  setLoading(kind);
-  try{
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'ngrok-skip-browser-warning': 'true' },
-      body: formData
-    });
-    const data = await res.json();
-    renderResult(kind, data, res.ok && data.success !== false);
-  }catch(err){
-    renderResult(kind, {
-      error: "Could not reach backend. Is app.py running at " + BASE_URL + "?",
-      detail: String(err)
-    }, false);
-  }
+@media (prefers-reduced-motion: reduce) {
+  .scan-line { animation: none; opacity: 0.6; }
+  .node, .theme-toggle { transition: none; }
 }
