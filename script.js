@@ -59,7 +59,7 @@ async function loadRegisteredStudents(){
   listEl.innerHTML = '<span class="vf-hint" style="text-transform:none;letter-spacing:0">Loading…</span>';
 
   try{
-    const res = await fetch(BASE_URL + '/attendance/students', {
+    const res = await fetch(BASE_URL + '/attendance/registered', {
       headers: { 'ngrok-skip-browser-warning': 'true' }
     });
     const data = await res.json();
@@ -69,7 +69,7 @@ async function loadRegisteredStudents(){
       return;
     }
 
-    if(data.count === 0){
+    if(!data.students || data.students.length === 0){
       listEl.innerHTML = '<span class="vf-hint" style="text-transform:none;letter-spacing:0">No registration yet.</span>';
       return;
     }
@@ -93,7 +93,7 @@ async function loadRegisteredStudents(){
 
 async function removeStudent(userId){
   try{
-    const res = await fetch(BASE_URL + '/attendance/students/' + userId, {
+    const res = await fetch(BASE_URL + '/attendance/registered/' + userId, {
       method: 'DELETE',
       headers: { 'ngrok-skip-browser-warning': 'true' }
     });
@@ -309,6 +309,49 @@ async function sendAttendanceFrame(file){
   }
 }
 
+/* ---------- report downloads ---------- */
+
+async function downloadReport(kind){
+  const el = document.getElementById('readout-reports');
+  const url = kind === 'daily'
+    ? BASE_URL + '/attendance/reports/daily'
+    : BASE_URL + '/attendance/reports/monthly';
+
+  el.className = 'readout loading';
+  el.textContent = 'Preparing download…';
+
+  try{
+    const res = await fetch(url, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+    if(!res.ok){
+      el.className = 'readout err';
+      el.textContent = 'Could not generate the report.';
+      return;
+    }
+
+    // Pull the real filename off the server's Content-Disposition header
+    // instead of hardcoding one, since it's date-based (e.g.
+    // "Daily_Attendance_30_August_2026.xlsx").
+    const disposition = res.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    const filename = match ? match[1] : (kind + '-attendance.xlsx');
+
+    const blob = await res.blob();
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    el.className = 'readout';
+    el.textContent = 'Downloaded ' + filename;
+  }catch(err){
+    el.className = 'readout err';
+    el.textContent = 'Could not reach backend. Is app.py running at ' + BASE_URL + '?';
+    console.error('Report download failed:', err);
+  }
+}
+
 /* ---------- capture + upload (single-shot flows) ---------- */
 
 function showPreview(kind, file){
@@ -384,6 +427,22 @@ function renderAuthenticityResult(el, data){
   };
 
   let realPct = null, fakePct = null;
+
+  // Backend's actual shape: { "Real": "82.3%", "Fake": "17.7%", "Result": "Real"/"AI" }
+  if(data.Real !== undefined && data.Fake !== undefined){
+    const parsePctString = (v) => {
+      if(typeof v === 'number') return toPct(v);
+      const n = parseFloat(String(v).replace('%', ''));
+      return Number.isNaN(n) ? null : Math.round(n * 10) / 10;
+    };
+    realPct = parsePctString(data.Real);
+    fakePct = parsePctString(data.Fake);
+    if(realPct !== null && fakePct !== null){
+      const verdict = data.Result || (realPct >= fakePct ? "Real" : "AI");
+      el.textContent = `Real = ${realPct}%\nDeepFake = ${fakePct}%\n\nResult = "${verdict}"`;
+      return;
+    }
+  }
 
   if(data.real !== undefined && (data.fake !== undefined || data.deepfake !== undefined)){
     realPct = toPct(data.real);
