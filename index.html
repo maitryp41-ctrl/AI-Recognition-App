@@ -1,376 +1,221 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Recognition Suite</title>
-<style>
-  :root{
-    --bg: #0a0e0d;
-    --panel: #101614;
-    --line: #1e2a26;
-    --scan: #4dff9f;
-    --scan-dim: #1f6b46;
-    --text: #d8e6e0;
-    --text-dim: #6f8a80;
-    --danger: #ff5d5d;
-    --mono: 'Courier New', ui-monospace, monospace;
-    --sans: 'Segoe UI', system-ui, sans-serif;
-  }
-  *{box-sizing:border-box; margin:0; padding:0;}
-  body{
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height:100vh;
-    padding: 32px 20px 80px;
-    background-image:
-      linear-gradient(var(--line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--line) 1px, transparent 1px);
-    background-size: 40px 40px;
-    background-position: center;
-  }
-  header{ text-align:center; margin-bottom: 48px; }
-  .eyebrow{
-    font-family: var(--mono);
-    letter-spacing: 4px;
-    font-size: 11px;
-    color: var(--scan);
-    text-transform: uppercase;
-  }
-  h1{
-    font-size: clamp(28px, 5vw, 44px);
-    font-weight: 700;
-    margin-top: 8px;
-    letter-spacing: -0.5px;
-  }
-  .sub{ color: var(--text-dim); margin-top: 8px; font-size: 14px; }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 
-  .grid{
-    display:flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 40px;
-    max-width: 1000px;
-    margin: 0 auto 60px;
-  }
-  .node{
-    width: 220px;
-    text-align: center;
-    cursor: pointer;
-  }
-  .ring{
-    width: 180px; height: 180px;
-    border-radius: 50%;
-    border: 1px solid var(--scan-dim);
-    display:flex; align-items:center; justify-content:center;
-    margin: 0 auto 18px;
-    position: relative;
-    background: radial-gradient(circle at 50% 40%, rgba(77,255,159,0.06), transparent 70%);
-    transition: border-color .25s, box-shadow .25s;
-  }
-  .ring::before{
-    content:"";
-    position:absolute; inset: -1px;
-    border-radius:50%;
-    border: 1px dashed var(--line);
-  }
-  .node:hover .ring{
-    border-color: var(--scan);
-    box-shadow: 0 0 30px rgba(77,255,159,0.15);
-  }
-  .node.active .ring{
-    border-color: var(--scan);
-    box-shadow: 0 0 40px rgba(77,255,159,0.3);
-  }
-  .ring svg{ width:64px; height:64px; stroke: var(--scan); }
-  .node-label{
-    font-weight: 600; font-size: 15px; margin-bottom: 4px;
-  }
-  .node-status{
-    font-family: var(--mono); font-size: 10px; letter-spacing:1px;
-    color: var(--text-dim); text-transform: uppercase;
-  }
-
-  .panel{
-    max-width: 640px;
-    margin: 0 auto;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    padding: 28px;
-    display: none;
-  }
-  .panel.open{ display:block; }
-  .panel-title{
-    font-family: var(--mono);
-    font-size: 12px;
-    letter-spacing: 2px;
-    color: var(--scan);
-    text-transform: uppercase;
-    margin-bottom: 20px;
-    display:flex; justify-content: space-between; align-items:center;
-  }
-  .panel-title button{
-    background:none; border:none; color: var(--text-dim);
-    font-family: var(--mono); cursor:pointer; font-size: 12px;
-  }
-  .panel-title button:hover{ color: var(--text); }
-
-  .actions{ display:flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-  .actions.attendance{ flex-direction:column; }
-  .btn{
-    flex:1; min-width: 140px;
-    padding: 14px 16px;
-    background: transparent;
-    border: 1px solid var(--scan-dim);
-    color: var(--scan);
-    font-family: var(--mono);
-    font-size: 12px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: background .2s, color .2s;
-  }
-  .btn:hover{ background: var(--scan); color: #06110c; }
-  .btn:disabled{ opacity:.4; cursor:not-allowed; }
-
-  input[type=text]{
-    width:100%; padding: 12px; margin-bottom: 10px;
-    background: #0d1210; border: 1px solid var(--line);
-    color: var(--text); font-family: var(--sans); border-radius: 3px;
-    font-size: 14px;
-  }
-  input[type=text]::placeholder{ color: var(--text-dim); }
-
-  #preview{
-    width:100%; max-height: 260px; object-fit: contain;
-    border: 1px solid var(--line); border-radius: 4px;
-    margin-bottom: 16px; display:none; background:#000;
-  }
-
-  .readout{
-    font-family: var(--mono);
-    font-size: 13px;
-    background: #06110c;
-    border: 1px solid var(--line);
-    border-radius: 3px;
-    padding: 16px;
-    white-space: pre-wrap;
-    word-break: break-word;
-    min-height: 60px;
-    color: var(--text);
-  }
-  .readout.err{ color: var(--danger); }
-  .readout .lbl{ color: var(--scan-dim); }
-
-  .loading{
-    color: var(--scan);
-    font-family: var(--mono); font-size: 12px;
-  }
-  .blink{ animation: blink 1s infinite; }
-  @keyframes blink{ 50%{ opacity:.2; } }
-
-  footer{
-    text-align:center; margin-top: 60px;
-    font-family: var(--mono); font-size: 11px; color: var(--text-dim);
-  }
-</style>
+<!-- PWA: lets the browser install this as an app icon -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0d12">
+<link rel="icon" href="icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AI Suite">
 </head>
 <body>
 
-<header>
-  <h1>AI Recognition Suite</h1>
-</header>
+<div class="topbar">
+  <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle light and dark mode">
+    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke-linecap="round"/></svg>
+    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z" stroke-linejoin="round"/></svg>
+  </button>
+</div>
+<h1 class="main-title">AI Recognition Suite</h1>
 
 <div class="grid">
-  <div class="node" data-tool="object" onclick="openPanel('object')">
-    <div class="ring">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M3 7V4a1 1 0 0 1 1-1h3M3 17v3a1 1 0 0 0 1 1h3M21 7V4a1 1 0 0 0-1-1h-3M21 17v3a1 1 0 0 1-1 1h-3" stroke-linecap="round"/><circle cx="12" cy="12" r="3.2"/></svg>
+  <div class="grid-top">
+    <div class="node" data-tool="object" data-accent="amber" onclick="openPanel('object')">
+      <div class="ring">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M3 7V4a1 1 0 0 1 1-1h3M3 17v3a1 1 0 0 0 1 1h3M21 7V4a1 1 0 0 0-1-1h-3M21 17v3a1 1 0 0 1-1 1h-3" stroke-linecap="round"/><circle cx="12" cy="12" r="3.2"/></svg>
+      </div>
+      <div class="node-label">AI Object Recognition</div>
     </div>
-    <div class="node-label">AI Object Recognition</div>
-    <div class="node-status">/object</div>
+
+    <div class="node" data-tool="authenticity" data-accent="cyan" onclick="openPanel('authenticity')">
+      <div class="ring">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="node-label">AI Authenticity Recognition</div>
+    </div>
   </div>
 
-  <div class="node" data-tool="authenticity" onclick="openPanel('authenticity')">
-    <div class="ring">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-    <div class="node-label">AI Authenticity Recognition</div>
-    <div class="node-status">/authenticity</div>
-  </div>
-
-  <div class="node" data-tool="attendance" onclick="openPanel('attendance')">
+  <div class="node node-bottom" data-tool="attendance" data-accent="violet" onclick="openPanel('attendance')">
     <div class="ring">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke-linecap="round"/></svg>
     </div>
     <div class="node-label">AI Face Recognition Attendance</div>
-    <div class="node-status">/attendance</div>
   </div>
 </div>
 
 <!-- OBJECT PANEL -->
-<div class="panel" id="panel-object">
-  <div class="panel-title">Object Recognition <button onclick="closePanel()">close ✕</button></div>
-  <img id="preview-object" class="preview-img" style="width:100%;max-height:260px;object-fit:contain;border:1px solid var(--line);border-radius:4px;margin-bottom:16px;display:none;background:#000;">
-  <div class="actions">
-    <label class="btn">Open Camera<input type="file" accept="image/*" capture="environment" hidden onchange="handleFile(event,'object')"></label>
-    <label class="btn">Upload from Gallery<input type="file" accept="image/*" hidden onchange="handleFile(event,'object')"></label>
+<section class="panel" id="panel-object" data-accent="amber">
+  <div class="panel-head">
+    <h2>AI Object Recognition</h2>
+    <button class="icon-btn" onclick="closePanel()">✕</button>
   </div>
+
+  <div class="viewfinder" id="vf-object">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    <div class="scan-line"></div>
+    <video class="vf-video" id="video-object" autoplay playsinline muted></video>
+    <canvas class="vf-canvas" id="canvas-object" hidden></canvas>
+    <img class="vf-image" id="preview-object" alt="">
+    <span class="vf-hint">No image yet</span>
+  </div>
+
+  <div class="capture-stack" id="controls-object">
+    <button type="button" class="btn btn-primary" onclick="startCamera('object')">
+      <span class="shutter-dot"></span>Open Camera
+    </button>
+    <label class="btn btn-secondary">
+      Upload from Gallery
+      <input type="file" accept="image/*" hidden onchange="handleFile(event,'object')">
+    </label>
+    <input type="file" accept="image/*" capture="environment" hidden id="fallback-object" onchange="handleFile(event,'object')">
+  </div>
+  <div class="capture-stack" id="streamControls-object" style="display:none">
+    <button type="button" class="btn btn-primary" onclick="capturePhoto('object')">
+      <span class="shutter-dot"></span>Capture Photo
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="cancelCamera('object')">Cancel</button>
+  </div>
+
   <div class="readout" id="readout-object">Waiting for image…</div>
-</div>
+</section>
 
 <!-- AUTHENTICITY PANEL -->
-<div class="panel" id="panel-authenticity">
-  <div class="panel-title">Authenticity Recognition <button onclick="closePanel()">close ✕</button></div>
-  <img id="preview-authenticity" class="preview-img" style="width:100%;max-height:260px;object-fit:contain;border:1px solid var(--line);border-radius:4px;margin-bottom:16px;display:none;background:#000;">
-  <div class="actions">
-    <label class="btn">Open Camera<input type="file" accept="image/*" capture="environment" hidden onchange="handleFile(event,'authenticity')"></label>
-    <label class="btn">Upload from Gallery<input type="file" accept="image/*" hidden onchange="handleFile(event,'authenticity')"></label>
+<section class="panel" id="panel-authenticity" data-accent="cyan">
+  <div class="panel-head">
+    <h2>AI Authenticity Recognition</h2>
+    <button class="icon-btn" onclick="closePanel()">✕</button>
   </div>
+
+  <div class="viewfinder" id="vf-authenticity">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    <div class="scan-line"></div>
+    <video class="vf-video" id="video-authenticity" autoplay playsinline muted></video>
+    <canvas class="vf-canvas" id="canvas-authenticity" hidden></canvas>
+    <img class="vf-image" id="preview-authenticity" alt="">
+    <span class="vf-hint">No image yet</span>
+  </div>
+
+  <div class="capture-stack" id="controls-authenticity">
+    <button type="button" class="btn btn-primary" onclick="startCamera('authenticity')">
+      <span class="shutter-dot"></span>Open Camera
+    </button>
+    <label class="btn btn-secondary">
+      Upload from Gallery
+      <input type="file" accept="image/*" hidden onchange="handleFile(event,'authenticity')">
+    </label>
+    <input type="file" accept="image/*" capture="environment" hidden id="fallback-authenticity" onchange="handleFile(event,'authenticity')">
+  </div>
+  <div class="capture-stack" id="streamControls-authenticity" style="display:none">
+    <button type="button" class="btn btn-primary" onclick="capturePhoto('authenticity')">
+      <span class="shutter-dot"></span>Capture Photo
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="cancelCamera('authenticity')">Cancel</button>
+  </div>
+
   <div class="readout" id="readout-authenticity">Waiting for image…</div>
-</div>
+</section>
 
 <!-- ATTENDANCE PANEL -->
-<div class="panel" id="panel-attendance">
-  <div class="panel-title">Face Recognition Attendance <button onclick="closePanel()">close ✕</button></div>
+<section class="panel" id="panel-attendance" data-accent="violet">
+  <div class="panel-head">
+    <h2>AI Face Recognition Attendance</h2>
+    <button class="icon-btn" onclick="closePanel()">✕</button>
+  </div>
 
-  <div style="margin-bottom:24px;">
-    <div class="node-status" style="margin-bottom:8px;">Step 1 — Register a face (one time per student)</div>
+  <div class="sub-block">
+    <div class="step-label">Step 1 — Register a face</div>
     <input type="text" id="reg-name" placeholder="Student name">
     <input type="text" id="reg-id" placeholder="User ID">
-    <img id="preview-register" class="preview-img" style="width:100%;max-height:200px;object-fit:contain;border:1px solid var(--line);border-radius:4px;margin-bottom:10px;display:none;background:#000;">
-    <div class="actions">
-      <label class="btn">Capture Face<input type="file" accept="image/*" capture="user" hidden onchange="handleFile(event,'register')"></label>
-      <label class="btn">Upload from Gallery<input type="file" accept="image/*" hidden onchange="handleFile(event,'register')"></label>
+
+    <div class="viewfinder small" id="vf-register">
+      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+      <div class="scan-line"></div>
+      <video class="vf-video" id="video-register" autoplay playsinline muted></video>
+      <canvas class="vf-canvas" id="canvas-register" hidden></canvas>
+      <img class="vf-image" id="preview-register" alt="">
+      <span class="vf-hint">No image yet</span>
     </div>
+
+    <div class="capture-stack" id="controls-register">
+      <button type="button" class="btn btn-primary" onclick="startCamera('register')">
+        <span class="shutter-dot"></span>Capture Face
+      </button>
+      <label class="btn btn-secondary">
+        Upload from Gallery
+        <input type="file" accept="image/*" hidden onchange="handleFile(event,'register')">
+      </label>
+      <input type="file" accept="image/*" capture="user" hidden id="fallback-register" onchange="handleFile(event,'register')">
+    </div>
+    <div class="capture-stack" id="streamControls-register" style="display:none">
+      <button type="button" class="btn btn-primary" onclick="capturePhoto('register')">
+        <span class="shutter-dot"></span>Capture Photo
+      </button>
+      <button type="button" class="btn btn-secondary" onclick="cancelCamera('register')">Cancel</button>
+    </div>
+
     <div class="readout" id="readout-register">No registration yet.</div>
+
+    <!-- real, server-backed list of who's registered so far -->
+    <div class="step-label" style="margin-top:18px">Registered students</div>
+    <div class="student-list" id="student-list">
+      <span class="vf-hint" style="text-transform:none;letter-spacing:0">Loading…</span>
+    </div>
   </div>
 
-  <div>
-    <div class="node-status" style="margin-bottom:8px;">Step 2 — Mark attendance</div>
-    <img id="preview-attendance" class="preview-img" style="width:100%;max-height:200px;object-fit:contain;border:1px solid var(--line);border-radius:4px;margin-bottom:10px;display:none;background:#000;">
-    <div class="actions">
-      <label class="btn">Capture Face<input type="file" accept="image/*" capture="user" hidden onchange="handleFile(event,'attendance')"></label>
-      <label class="btn">Upload from Gallery<input type="file" accept="image/*" hidden onchange="handleFile(event,'attendance')"></label>
+  <div class="sub-block">
+    <div class="step-label">Step 2 — Mark attendance</div>
+
+    <div class="viewfinder small" id="vf-attendance">
+      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+      <div class="scan-line"></div>
+      <video class="vf-video" id="video-attendance" autoplay playsinline muted></video>
+      <canvas class="vf-canvas" id="canvas-attendance" hidden></canvas>
+      <img class="vf-image" id="preview-attendance" alt="">
+      <span class="vf-hint">No image yet</span>
     </div>
+
+    <div class="capture-stack" id="controls-attendance">
+      <button type="button" class="btn btn-primary" onclick="startCamera('attendance')">
+        <span class="shutter-dot"></span>Capture Face
+      </button>
+      <!-- No gallery upload here on purpose: attendance must come from a live
+           camera capture, so the anti-spoofing check has an actual fresh frame
+           to evaluate, not an arbitrary saved photo. -->
+      <input type="file" accept="image/*" capture="user" hidden id="fallback-attendance" onchange="handleFile(event,'attendance')">
+    </div>
+    <div class="capture-stack" id="streamControls-attendance" style="display:none">
+      <button type="button" class="btn btn-primary" onclick="capturePhoto('attendance')">
+        <span class="shutter-dot"></span>Capture Photo
+      </button>
+      <button type="button" class="btn btn-secondary" onclick="cancelCamera('attendance')">Cancel</button>
+    </div>
+
     <div class="readout" id="readout-attendance">Waiting for image…</div>
   </div>
-</div>
+</section>
 
-<footer>AI Recognition Suite — runs entirely against your local Flask backend. No data leaves this machine.</footer>
-
+<script src="config.js"></script>
+<script src="script.js"></script>
 <script>
-  // Change this if your backend runs somewhere other than localhost:5000
-  const BASE_URL = "http://localhost:5000";
-  document.getElementById('base-url-label').textContent = BASE_URL;
-
-  function openPanel(tool){
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
-    document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
-    document.getElementById('panel-' + tool).classList.add('open');
-    document.querySelector(`.node[data-tool="${tool}"]`).classList.add('active');
-    document.getElementById('panel-' + tool).scrollIntoView({behavior:'smooth', block:'center'});
-  }
-  function closePanel(){
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
-    document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
-  }
-
-  function showPreview(kind, file){
-    const img = document.getElementById('preview-' + kind);
-    if(!img) return;
-    img.src = URL.createObjectURL(file);
-    img.style.display = 'block';
-  }
-
-  function setLoading(kind){
-    const el = document.getElementById('readout-' + kind);
-    el.className = 'readout loading';
-    el.textContent = 'Sending to backend' ;
-    let dots = 0;
-    el._interval = setInterval(() => {
-      dots = (dots + 1) % 4;
-      el.textContent = 'Sending to backend' + '.'.repeat(dots);
-    }, 400);
-  }
-
-  function stopLoading(kind){
-    const el = document.getElementById('readout-' + kind);
-    if(el._interval) clearInterval(el._interval);
-  }
-
-  function formatResult(kind, data){
-    if(data.error){
-      return "Error: " + data.error;
-    }
-
-    if(kind === 'object'){
-      if(!data.labels || data.labels.length === 0) return "No objects detected.";
-      return data.labels.join('\n');
-    }
-
-    if(kind === 'authenticity'){
-      return `Real: ${data.Real}\nDeepFake: ${data.DeepFake}\n\nResult: ${data.verdict}`;
-    }
-
-    if(kind === 'register'){
-      return data.message || "Registered.";
-    }
-
-    if(kind === 'attendance'){
-      if(data.status === 'marked'){
-        return `Name: ${data.name}\nUser ID: ${data.user_id}\nTime: ${data.timestamp}\nStatus: Present`;
-      }
-      return data.error || data.status || "Could not mark attendance.";
-    }
-
-    return JSON.stringify(data);
-  }
-
-  function renderResult(kind, data, ok){
-    stopLoading(kind);
-    const el = document.getElementById('readout-' + kind);
-    el.className = ok ? 'readout' : 'readout err';
-    el.textContent = formatResult(kind, data);
-  }
-
-  async function handleFile(event, kind){
-    const file = event.target.files[0];
-    if(!file) return;
-    showPreview(kind === 'register' ? 'register' : kind, file);
-
-    const formData = new FormData();
-    formData.append('image', file);
-
-    let url, method = 'POST';
-    if(kind === 'object')       url = BASE_URL + '/object';
-    if(kind === 'authenticity') url = BASE_URL + '/authenticity';
-    if(kind === 'attendance')   url = BASE_URL + '/attendance';
-    if(kind === 'register'){
-      const name = document.getElementById('reg-name').value.trim();
-      const userId = document.getElementById('reg-id').value.trim();
-      if(!name || !userId){
-        renderResult('register', {error: "Enter both name and user ID before capturing a photo."}, false);
-        return;
-      }
-      formData.append('name', name);
-      formData.append('user_id', userId);
-      url = BASE_URL + '/attendance/register';
-    }
-
-    setLoading(kind);
-    try{
-      const res = await fetch(url, { method, body: formData });
-      const data = await res.json();
-      renderResult(kind, data, res.ok && data.success !== false);
-    }catch(err){
-      renderResult(kind, {error: "Could not reach backend. Is app.py running at " + BASE_URL + "?", detail: String(err)}, false);
-    }
-    event.target.value = ''; // allow re-selecting the same file
+  // Register the service worker so browsers offer "Install app" / add to
+  // home screen. Only works when served over http(s) — not file://.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => {
+        console.warn('Service worker registration failed:', err);
+      });
+    });
   }
 </script>
-
 </body>
 </html>
