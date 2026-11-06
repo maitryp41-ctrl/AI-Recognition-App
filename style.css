@@ -196,11 +196,12 @@ html, body {
 .viewfinder {
   position: relative;
   width: 100%;
+  max-width: 260px;          /* ADDED - caps the camera width */
   aspect-ratio: 3 / 4;
   border-radius: 14px;
   background: #000;
   overflow: hidden;
-  margin-bottom: 16px;
+  margin: 0 auto 16px;       /* CHANGED from "margin-bottom: 16px" - centers the camera */
   display: flex;
   align-items: center;
   justify-content: center;
